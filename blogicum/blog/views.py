@@ -1,50 +1,71 @@
-from django.shortcuts import render, get_object_or_404
-from django.utils import timezone
-from .models import Post, Category
+from django.shortcuts import render
+from django.http import Http404
+
+posts = [
+    {
+        'id': 0,
+        'location': 'Остров отчаянья',
+        'date': '30 сентября 1659 года',
+        'category': 'travel',
+        'text': '''Наш корабль, застигнутый в открытом море
+                страшным штормом, потерпел крушение.
+                Весь экипаж, кроме меня, утонул; я же,
+                несчастный Робинзон Крузо, был выброшен
+                полумёртвым на берег этого проклятого острова,
+                который назвал островом Отчаяния.''',
+    },
+    {
+        'id': 1,
+        'location': 'Остров отчаянья',
+        'date': '1 октября 1659 года',
+        'category': 'not-my-day',
+        'text': '''Проснувшись поутру, я увидел, что наш корабль сняло
+                с мели приливом и пригнало гораздо ближе к берегу.
+                Это подало мне надежду, что, когда ветер стихнет,
+                мне удастся добраться до корабля и запастись едой и
+                другими необходимыми вещами. Я немного приободрился,
+                хотя печаль о погибших товарищах не покидала меня.
+                Мне всё думалось, что, останься мы на корабле, мы
+                непременно спаслись бы. Теперь из его обломков мы могли бы
+                построить баркас, на котором и выбрались бы из этого
+                гиблого места.''',
+    },
+    {
+        'id': 2,
+        'location': 'Остров отчаянья',
+        'date': '25 октября 1659 года',
+        'category': 'not-my-day',
+        'text': '''Всю ночь и весь день шёл дождь и дул сильный
+                порывистый ветер. 25 октября.  Корабль за ночь разбило
+                в щепки; на том месте, где он стоял, торчат какие-то
+                жалкие обломки,  да и те видны только во время отлива.
+                Весь этот день я хлопотал  около вещей: укрывал и
+                укутывал их, чтобы не испортились от дождя.''',
+    },
+]
+
+posts_dict = {post['id']: post for post in posts}
 
 
 def index(request):
+    """Главная страница со всеми постами."""
     template = 'blog/index.html'
-    post_list = Post.objects.filter(
-        is_published=True,
-        category__is_published=True,
-        pub_date__lte=timezone.now()
-    ).order_by('-pub_date')[:5]
-    
-    context = {'post_list': post_list}
+    context = {'posts': posts}
     return render(request, template, context)
 
 
 def post_detail(request, post_id):
+    """Страница отдельного поста."""
     template = 'blog/detail.html'
-    post = get_object_or_404(
-        Post,
-        pk=post_id,
-        is_published=True,
-        category__is_published=True,
-        pub_date__lte=timezone.now()
-    )
-    
+    post = posts_dict.get(post_id)
+    if post is None:
+        raise Http404("Пост не найден")
     context = {'post': post}
     return render(request, template, context)
 
 
 def category_posts(request, category_slug):
+    """Страница категории."""
     template = 'blog/category.html'
-    category = get_object_or_404(
-        Category,
-        slug=category_slug,
-        is_published=True
-    )
-    
-    post_list = Post.objects.filter(
-        category=category,
-        is_published=True,
-        pub_date__lte=timezone.now()
-    ).order_by('-pub_date')
-    
-    context = {
-        'category': category,
-        'post_list': post_list
-    }
+    context = {'category_slug': category_slug}
     return render(request, template, context)
